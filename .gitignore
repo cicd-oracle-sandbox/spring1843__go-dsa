@@ -1,0 +1,6 @@
+.DS_Store
+profile.cov
+.pre-commit-config.yaml
+.vscode
+.idea
+bin

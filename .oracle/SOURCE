@@ -1,0 +1,4 @@
+upstream: https://github.com/spring1843/go-dsa
+commit: b7f6535be6a022ae1c0d1e32f40fe33168826657
+license: Apache-2.0
+Unmodified snapshot except that .github/workflows was emptied.
