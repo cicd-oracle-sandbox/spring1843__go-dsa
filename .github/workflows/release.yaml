@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+      - env:
+          VERSION: ${{ github.ref }}
+        run: make build VERSION=${VERSION}
+      - name: Create Release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref }}
+          RELEASE_NAME: Release ${{ github.ref }}
+          PRERELEASE: ${{ contains(github.ref, '-') }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --title "$RELEASE_NAME" \
+            --notes "## Changes in this release:
+
+            * Add your release notes here." \
+            --draft=false \
+            --prerelease="$PRERELEASE"
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref }}
+        run: |
+          gh release upload "$TAG_NAME" ./bin/go-dsa.md --clobber
