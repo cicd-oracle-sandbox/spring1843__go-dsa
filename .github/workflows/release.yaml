@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+      - name: Set version and tag
+        run: |
+          TAG="${{ github.ref }}"
+          TAG="${TAG#refs/tags/}"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "VERSION=${{ github.ref }}" >> $GITHUB_ENV
+          if [[ "$TAG" == *-* ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+          else
+            echo "PRERELEASE=false" >> $GITHUB_ENV
+          fi
+      - run: make build VERSION=${{ env.VERSION }}
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
+          RELEASE_NAME: Release ${{ github.ref }}
+          PRERELEASE: ${{ env.PRERELEASE }}
+        run: |
+          gh release create "$TAG" \
+            --title "$RELEASE_NAME" \
+            --notes "## Changes in this release:\n\n* Add your release notes here." \
+            --draft=false \
+            --prerelease="$PRERELEASE"
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.TAG }}
+        run: |
+          gh release upload "$TAG" ./bin/go-dsa.md --clobber
